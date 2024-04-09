@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+
+# project
+.idea/
+.vscode/
+
+# compiled files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+*.cover
+*.tar.gz
+*.tar
+*.zip
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.bak
+*.swp
+*.tmp
+*.tmp.*
+*.~tmp
+
+# golang
+vendor/
+bin/
+dist/
+build/
+out/
+
+# Lua
+*.lua~
+*.luac
+
