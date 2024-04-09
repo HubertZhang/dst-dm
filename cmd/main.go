@@ -23,10 +23,10 @@ import (
 var logger *slog.Logger
 
 var (
-	flagAccessKey   = flag.String("accessKey", "", "accessKey")
-	flagAccessToken = flag.String("secret", "", "secret")
-	flagAppID       = flag.Int64("app-id", 0, "app-id")
-	flagPort        = flag.Int("port", 9876, "port")
+	flagAccessKey   = flag.String("key", "", "从直播开放平台获取的 accessKey")
+	flagAccessToken = flag.String("secret", "", "从直播开放平台获取的 secret")
+	flagAppID       = flag.Int64("app-id", 0, "插件 app-id")
+	flagPort        = flag.Int("port", 9876, "监听端口")
 )
 
 type Room struct {
@@ -221,7 +221,19 @@ func NewServer(sdk *live.Client) *Server {
 
 func main() {
 	flag.Parse()
+
 	logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
+	if *flagAccessKey == "" || *flagAccessToken == "" || *flagAppID == 0 {
+		fmt.Println("AccessKey 或 Secret 或 AppID 缺失")
+		fmt.Println()
+		fmt.Println("使用方式：")
+		fmt.Println("  start -key=xxx -secret=xxx -app-id=xxx -port=9876")
+		fmt.Println()
+		fmt.Println("参数说明：")
+		flag.PrintDefaults()
+		return
+	}
 	sdkConfig := live.NewConfig(*flagAccessKey, *flagAccessToken, *flagAppID)
 
 	// 创建sdk实例
