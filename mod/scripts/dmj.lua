@@ -27,7 +27,7 @@ function DMJ_SetRoomCode(c)
 end
 
 function DMJ_State()
-    c_announce(State)
+    ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", "状态：" .. State, WHITE)
 end
 
 -- function DMJ_DisplaySettingPage()
@@ -38,8 +38,14 @@ end
 
 function DMJ_Start()
     if not Settings.roomcode then
+        ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", "未设置身份码", RED)
         return
     end
+    ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", "已启动", WHITE)
+    TheWorld:DoTaskInTime(0.1, DMJ_Fetch)
+end
+
+function DMJ_Fetch()
     local baseurl = Settings.baseurl or "http://127.0.0.1:9876"
     TheSim:QueryServer(baseurl .. "/room/" .. Settings.roomcode .. "/msgs",
         function(result, isSuccessful, code)
@@ -58,7 +64,7 @@ function DMJ_Start()
                         end
                     end
                 end
-                TheWorld:DoTaskInTime(0.1, DMJ_Start)
+                TheWorld:DoTaskInTime(0.1, DMJ_Fetch)
             else
                 State = "Error"
             end
