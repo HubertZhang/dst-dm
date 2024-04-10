@@ -104,7 +104,7 @@ func main() {
 		fmt.Println("AccessKey 或 Secret 或 AppID 缺失")
 		fmt.Println()
 		fmt.Println("使用方式：")
-		fmt.Println("  start -key=xxx -secret=xxx -app-id=xxx -port=9876")
+		fmt.Println("  start -key=xxx -secret=xxx -app-id=xxx -port=9876 -room-code=xxx")
 		fmt.Println()
 		fmt.Println("参数说明：")
 		flag.PrintDefaults()
@@ -157,7 +157,9 @@ func main() {
 	go func() {
 		for range tk.C {
 			err := sdk.AppHeartbeat(resp.GameInfo.GameID)
-			logger.Warn("Heartbeat fail", slog.Any("err", err), slog.String("roomid", resp.GameInfo.GameID))
+			if err != nil {
+				logger.Warn("Heartbeat fail", slog.Any("err", err), slog.String("roomid", resp.GameInfo.GameID))
+			}
 		}
 	}()
 	// 创建http服务
