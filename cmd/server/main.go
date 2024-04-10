@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -16,8 +15,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/vtb-link/bianka/basic"
 	"github.com/vtb-link/bianka/live"
-	"github.com/vtb-link/bianka/proto"
 	"golang.org/x/exp/slog"
+
+	"hubertzhang.com/dst-dm/room"
 )
 
 var logger *slog.Logger
@@ -29,73 +29,9 @@ var (
 	flagPort        = flag.Int("port", 9876, "监听端口")
 )
 
-type Room struct {
-	Code            string
-	StartResponse   *live.AppStartResponse
-	WSClient        *basic.WsClient
-	LastContactTime time.Time
-
-	mu       *sync.RWMutex
-	Messages chan *proto.Cmd
-}
-
-func (r *Room) Handler(w http.ResponseWriter, req *http.Request) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	r.LastContactTime = time.Now()
-	// 业务逻辑
-	t := time.NewTimer(3 * time.Second)
-
-	msgs := make([]*proto.Cmd, 0, 10)
-	select {
-	case msg := <-r.Messages:
-		msgs = append(msgs, msg)
-	case <-t.C:
-		break
-	}
-LOOP:
-	for i := 0; i < 9; i++ {
-		select {
-		case msg := <-r.Messages:
-			msgs = append(msgs, msg)
-		default:
-			break LOOP
-		}
-	}
-	logger.Debug("Returned msgs to DST", slog.Int("count", len(msgs)))
-	err := json.NewEncoder(w).Encode(msgs)
-	if err != nil {
-		logger.Warn("Error encoding messages", slog.Any("err", err))
-	}
-}
-
-func (r *Room) Handle(wsClient *basic.WsClient, msg *proto.Message) error {
-	// sdk提供了自动解析消息的方法，可以快速解析为对应的cmd和data
-	// 具体的cmd 可以参考 proto/cmd.go
-	cmd, data, err := proto.AutomaticParsingMessageCommand(msg.Payload())
-	if err != nil {
-		return err
-	}
-
-	// 你可以使用cmd进行switch
-	switch cmd {
-	case proto.CmdLiveOpenPlatformDanmu:
-		if len(r.Messages) > 90 {
-			for i := 0; i < 10; i++ {
-				<-r.Messages
-			}
-		}
-		r.Messages <- &proto.Cmd{
-			Cmd:  cmd,
-			Data: data.(*proto.CmdDanmuData),
-		}
-	}
-	return nil
-}
-
 type Server struct {
 	sdk   *live.Client
-	Rooms map[string]*Room
+	Rooms map[string]*room.Room
 
 	mu *sync.RWMutex
 	tk *time.Ticker
@@ -150,9 +86,7 @@ func (s *Server) Heartbeat() {
 				r := s.Rooms[v]
 				if r != nil {
 					logger.Info("Closing room due to timeout", slog.String("uname", r.StartResponse.AnchorInfo.Uname), slog.Int("uid", r.StartResponse.AnchorInfo.Uid))
-					r.mu.Lock()
-					r.WSClient.Close()
-					r.mu.Unlock()
+					r.Close()
 				}
 			}
 
@@ -165,16 +99,6 @@ func (s *Server) AddRoom(code string) error {
 	if err != nil {
 		return err
 	}
-	r := &Room{
-		Code:            code,
-		StartResponse:   startResp,
-		LastContactTime: time.Now(),
-		Messages:        make(chan *proto.Cmd, 100),
-		mu:              &sync.RWMutex{},
-	}
-	dispatcherHandleMap := basic.DispatcherHandleMap{
-		proto.OperationMessage: r.Handle,
-	}
 
 	onCloseCallback := func(wcs *basic.WsClient, _ basic.StartResp, closeType int) {
 		s.mu.Lock()
@@ -182,11 +106,10 @@ func (s *Server) AddRoom(code string) error {
 		s.mu.Unlock()
 	}
 
-	wsClient, err := basic.StartWebsocket(startResp, dispatcherHandleMap, onCloseCallback, basic.DefaultLoggerGenerator())
+	r, err := room.New(code, startResp, onCloseCallback)
 	if err != nil {
 		return err
 	}
-	r.WSClient = wsClient
 	s.mu.Lock()
 	s.Rooms[code] = r
 	s.mu.Unlock()
@@ -197,14 +120,12 @@ func (s *Server) AddRoom(code string) error {
 
 func (s *Server) Close() error {
 	s.tk.Stop()
-	rooms := []*Room{}
+	rooms := []*room.Room{}
 	for _, v := range s.Rooms {
 		rooms = append(rooms, v)
 	}
 	for _, v := range rooms {
-		v.mu.Lock()
-		v.WSClient.Close()
-		v.mu.Unlock()
+		v.Close()
 	}
 	return nil
 }
@@ -212,7 +133,7 @@ func (s *Server) Close() error {
 func NewServer(sdk *live.Client) *Server {
 	s := &Server{
 		sdk:   sdk,
-		Rooms: make(map[string]*Room),
+		Rooms: make(map[string]*room.Room),
 		mu:    &sync.RWMutex{},
 	}
 	go s.Heartbeat()
