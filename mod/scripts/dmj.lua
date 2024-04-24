@@ -38,8 +38,7 @@ end
 
 function DMJ_Start()
     if not Settings.roomcode then
-        ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", "未设置身份码", RED)
-        return
+        Settings.roomcode = "-"
     end
     ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", "已启动", WHITE)
     TheWorld:DoTaskInTime(0.1, DMJ_Fetch)
@@ -68,18 +67,22 @@ function DMJ_Fetch()
                                 -- 是否增加几个mod选项，供选择头像等级组合？
                                 if v.fans_medal_level and v.fans_medal_level ~= 0 and v.fans_medal_wearing_status then
                                     if v.fans_medal_level < 10 then
-                                        ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg, nameColour[v.guard_level or 0],
-                                                "profileflair_egg", nil, true) -- 鸟蛋
+                                        ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg,
+                                            nameColour[v.guard_level or 0],
+                                            "profileflair_egg", nil, true) -- 鸟蛋
                                     elseif v.fans_medal_level < 20 then
-                                        ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg, nameColour[v.guard_level or 0],
-                                                "profileflair_crowkid", nil, true) -- 鸦年华小乌鸦
+                                        ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg,
+                                            nameColour[v.guard_level or 0],
+                                            "profileflair_crowkid", nil, true) -- 鸦年华小乌鸦
                                     else
-                                        ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg, nameColour[v.guard_level or 0],
-                                                "profileflair_corvus", nil, true) -- 鸦年华良羽鸦
+                                        ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg,
+                                            nameColour[v.guard_level or 0],
+                                            "profileflair_corvus", nil, true) -- 鸦年华良羽鸦
                                     end
                                 else
-                                    ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg, nameColour[v.guard_level or 0],
-                                            "profileflair_skincollector", nil, true)
+                                    ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, v.uname, v.msg,
+                                        nameColour[v.guard_level or 0],
+                                        "profileflair_skincollector", nil, true)
                                 end
                             end
                         elseif c.cmd == "LIVE_OPEN_PLATFORM_SEND_GIFT" then
@@ -89,6 +92,13 @@ function DMJ_Fetch()
                     TheWorld:DoTaskInTime(0.1, DMJ_Fetch)
                 else
                     State = "Error"
+                    local error_msg = "【错误】请求结果："
+                    if not isSuccessful then
+                        error_msg = error_msg .. "请求失败"
+                    else
+                        error_msg = error_msg .. string.format("错误代码：%d， %s", code, result)
+                    end
+                    ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", error_msg, RED)
                 end
             end)
 end
