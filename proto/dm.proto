@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package dmserver.blive.v1;
+option go_package = "hubertzhang.com/dst-dm/proto";
+
+service DMService {
+    rpc Session(stream SessionRequest) returns (stream SessionResponse) {};
+}
+
+message SessionRequest {
+    message StartSessionRequest {
+        string room_token = 1;
+    }
+
+    message HeartbeatRequest {
+    }
+
+    oneof request {
+        StartSessionRequest start = 1;
+        HeartbeatRequest heartbeat = 2;
+    }
+}
+
+message SessionResponse {
+    message StartSessionResponse {
+        bytes startApp = 1;
+    }
+
+    message HeartbeatResponse {
+    }
+
+    oneof response {
+        StartSessionResponse start = 1;
+        HeartbeatResponse heartbeat = 2;
+    }
+}
