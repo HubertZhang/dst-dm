@@ -1,5 +1,21 @@
+require "emoji_items"
+
 local Settings = {}
 local State = "Stoped"
+local emojiDictionary = {}
+
+local function LoadEmoji()
+    local emoji_translator = {}
+    for item_type, emoji in pairs(EMOJI_ITEMS) do
+        if TheInventory:CheckOwnership(item_type) then
+            emoji_translator[emoji.input_name] = emoji.data.utf8_str
+        end
+    end
+    return emoji_translator
+end
+
+
+
 TheSim:GetPersistentString("dmj_bilibili", function(load_success, str)
     if load_success then
         local success, saved_settings = RunInSandbox(str)
@@ -8,6 +24,41 @@ TheSim:GetPersistentString("dmj_bilibili", function(load_success, str)
         end
     end
 end)
+
+---@param text string
+---@return string
+local function replaceEmoji(text)
+    local newText = ""
+    local temp = nil
+    for i = 1, text:len() do
+        local c = text:sub(i, i)
+        if temp == nil then
+            if c == ":" then
+                temp = ""
+            else
+                newText = newText .. c
+            end
+        else
+            if c == ":" then
+                -- print("find possible: " ..  temp)
+                if emojiDictionary[temp] then
+                    newText = newText .. emojiDictionary[temp]
+                    temp = nil
+                else
+                    newText = newText .. ":" .. temp
+                    temp = ""
+                end
+                
+            else
+                temp = temp .. c
+            end
+        end
+    end
+    if temp ~= nil then
+        newText = newText .. ":" .. temp
+    end
+    return newText
+end
 
 function DMJ_Save()
     local str = DataDumper(Settings, nil, true)
@@ -37,6 +88,7 @@ end
 -- end
 
 function DMJ_Start()
+    emojiDictionary = LoadEmoji()
     if not Settings.roomcode then
         Settings.roomcode = "-"
     end
@@ -64,6 +116,7 @@ function DMJ_Fetch()
                         if c.cmd == "LIVE_OPEN_PLATFORM_DM" then
                             local v = c.data
                             if v.uname and v.msg then
+                                v.msg = replaceEmoji(v.msg)
                                 -- 是否增加几个mod选项，供选择头像等级组合？
                                 if v.fans_medal_level and v.fans_medal_level ~= 0 and v.fans_medal_wearing_status then
                                     if v.fans_medal_level < 10 then
