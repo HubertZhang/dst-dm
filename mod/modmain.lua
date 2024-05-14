@@ -5,6 +5,6 @@ GLOBAL.setmetatable(env, {
 require("dmj")
 
 AddSimPostInit(function()
-    TheWorld:DoTaskInTime(0.1, DMJ_Start)
+    DMJ_Start()
 end)
 
