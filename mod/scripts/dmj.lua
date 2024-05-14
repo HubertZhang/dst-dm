@@ -93,7 +93,7 @@ function DMJ_Start()
         Settings.roomcode = "-"
     end
     ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", "已启动", WHITE)
-    TheWorld:DoTaskInTime(0.1, DMJ_Fetch)
+    coroutine.resume(coroutine.create(DMJ_Fetch))
 end
 
 local nameColour = {}
@@ -142,7 +142,7 @@ function DMJ_Fetch()
                             -- 预留给
                         end
                     end
-                    TheWorld:DoTaskInTime(0.1, DMJ_Fetch)
+                    coroutine.resume(coroutine.create(DMJ_Fetch))
                 else
                     State = "Error"
                     local error_msg = "【错误】请求结果："
