@@ -5,6 +5,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"flag"
+	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -37,12 +39,23 @@ var savedConfig Config
 //go:embed index.html
 var index string
 
+const (
+	LOG_PATH    = "dmj.log"
+	CONFIG_PATH = "dmj.json"
+)
+
 func main() {
-	logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	var logw io.Writer
+	var err error
+	logw, err = os.Create(LOG_PATH)
+	if err != nil {
+		logw = os.Stderr
+	}
+	logger = slog.New(slog.NewTextHandler(logw, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	basic.DefaultLoggerGenerator = func() *slog.Logger {
 		return logger.With("module", "bianka")
 	}
-	d, err := os.ReadFile("config.json")
+	d, err := os.ReadFile(CONFIG_PATH)
 	if err == nil {
 		json.Unmarshal(d, &savedConfig)
 	}
@@ -81,7 +94,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			err = os.WriteFile("config.json", d, 0644)
+			err = os.WriteFile(CONFIG_PATH, d, 0644)
 			if err != nil {
 				return err
 			}
@@ -109,6 +122,10 @@ func main() {
 	}
 	w.Bind("stop", func(req ...any) error {
 		cancel()
+		return nil
+	})
+	w.Bind("golog", func(req ...any) error {
+		logger.Info(fmt.Sprint(req...), slog.String("module", "webview"))
 		return nil
 	})
 	w.Bind("openRoom", func(req ...any) error {
