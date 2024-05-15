@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"os"
 	"strings"
 
@@ -87,8 +86,6 @@ func main() {
 				return err
 			}
 		}
-		fmt.Println(savedConfig.RoomCode)
-		w.Eval(`setState("processing")`)
 		go func() {
 			err := startServer(ctx, savedConfig, func() {
 				w.Dispatch(func() {
