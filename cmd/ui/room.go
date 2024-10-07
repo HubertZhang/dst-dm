@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -16,15 +17,19 @@ import (
 	"hubertzhang.com/dst-dm/room"
 )
 
-func startServer(ctx context.Context, roomCode string, callback func()) error {
-	sdkConfig := live.NewConfig(AccessKey, AccessToken, AppId)
+func startServer(ctx context.Context, c Config, callback func()) error {
+	appId, err := strconv.ParseInt(c.AppIdStr, 10, 64)
+	if err != nil {
+		return fmt.Errorf("appId解析失败: %w", err)
+	}
+	sdkConfig := live.NewConfig(c.AccessKey, c.AccessToken, appId)
 
 	// 创建sdk实例
 	sdk := live.NewClient(sdkConfig)
 	basic.DefaultLoggerGenerator = func() *slog.Logger {
 		return logger.With("module", "bianka")
 	}
-	resp, err := sdk.AppStart(roomCode)
+	resp, err := sdk.AppStart(c.RoomCode)
 	if err != nil {
 		logger.Error("服务启动失败", slog.Any("err", err))
 		return fmt.Errorf("服务启动失败: %w", err)
@@ -32,7 +37,7 @@ func startServer(ctx context.Context, roomCode string, callback func()) error {
 
 	subCtx, cancel := context.WithCancel(ctx)
 
-	rm, err := room.New(roomCode, resp, func(wcs *basic.WsClient, _ basic.StartResp, closeType int) {
+	rm, err := room.New(c.RoomCode, resp, func(wcs *basic.WsClient, _ basic.StartResp, closeType int) {
 		canContinue := false
 		switch closeType {
 		case basic.CloseReadingConnError:

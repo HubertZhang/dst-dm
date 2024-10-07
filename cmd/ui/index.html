@@ -7,12 +7,25 @@
     <script defer>
         var roomCode = "";
         var saveCode = false;
+        var access_key_id = "";
+        var access_key_secret = "";
+        var app_id = "";
+
         window.onload = function () {
             if (roomCode) {
                 window.document.getElementById("roomInput").value = roomCode;
             }
             if (saveCode) {
                 window.document.getElementById("saveInput").checked = true;
+            }
+            if (access_key_id) {
+                window.document.getElementById("keyInput").value = access_key_id;
+            }
+            if (access_key_secret) {
+                window.document.getElementById("secretInput").value = access_key_secret;
+            }
+            if (app_id) {
+                window.document.getElementById("appIdInput").value = app_id;
             }
             show("login")
         }
@@ -40,9 +53,18 @@
         function submit() {
             roomCode = window.document.getElementById("roomInput").value
             saveCode = window.document.getElementById("saveInput").checked
+            access_key_id = window.document.getElementById("keyInput").value
+            access_key_secret = window.document.getElementById("secretInput").value
+            app_id = window.document.getElementById("appIdInput").value
 
             setState("progress")
-            callback(roomCode, saveCode)
+            callback({
+                "room_code": roomCode,
+                "save_code": saveCode,
+                "access_key_id": access_key_id,
+                "access_key_secret": access_key_secret,
+                "app_id": app_id,
+            })
         }
 
         function setState(state, msg) {
@@ -76,7 +98,7 @@
             top: 8px;
             left: 8px;
             width: 403px;
-            height: 253px;
+            height: 333px;
             opacity: 1;
             border-style: solid;
             border-width: 1px;
@@ -88,7 +110,7 @@
 
         #background {
             position: absolute;
-            top: 144px;
+            top: 224px;
             left: -24px;
 
         }
@@ -367,13 +389,29 @@
                     <span>在获取推流地址处可获取身份码</span>
                     <a class="codeLink" href="#" onclick="openRoom(); return false;">去获取</a>
                 </div>
+                <label class="code">
+                    <span>Key</span>
+                    <input id="keyInput" placeholder="请输入 access_key_id"></input>
+                </label>
+                <label class="code">
+                    <span>Secret</span>
+                    <input id="secretInput" placeholder="请输入 access_key_secret "></input>
+                </label>
+                <label class="code">
+                    <span>项目 ID</span>
+                    <input id="appIdInput" placeholder="请输入项目 ID"></input>
+                </label>
+                <div id="help">
+                    <span>在 Bilibili 开放平台可获取上述三个id</span>
+                    <a class="codeLink" href="#" onclick="openBilibili(); return false;">去获取</a>
+                </div>
             </div>
             <div id="submit">
                 <input class="startButton" type="button" value="开启玩法" onclick="submit()"></input>
             </div>
             <div id="saveCode">
                 <label class="save">
-                    记住身份码
+                    记住信息
                     <input id="saveInput" type="checkbox" />
                     <span class="checkmark"></span>
                 </label>

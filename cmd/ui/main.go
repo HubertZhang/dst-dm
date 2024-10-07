@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/browser"
@@ -22,28 +21,19 @@ var (
 	flagPort = flag.Int("port", 9876, "监听端口")
 )
 
-// 从直播开放平台获取的 accessKey
-var AccessKey string
-
-// 从直播开放平台获取的 secret
-var AccessToken string
-
-var AppIdStr string
-
-var AppId int64
-
-func init() {
-	var err error
-	AppId, err = strconv.ParseInt(AppIdStr, 10, 64)
-	if err != nil {
-		panic(err)
-	}
-}
-
-var config struct {
+type Config struct {
 	RoomCode string
 	SaveCode bool
+	// 从直播开放平台获取的 accessKey
+	AccessKey string
+
+	// 从直播开放平台获取的 secret
+	AccessToken string
+
+	AppIdStr string
 }
+
+var savedConfig Config
 
 //go:embed index.html
 var index string
@@ -55,12 +45,15 @@ func main() {
 	}
 	d, err := os.ReadFile("config.json")
 	if err == nil {
-		json.Unmarshal(d, &config)
+		json.Unmarshal(d, &savedConfig)
 	}
 
-	if config.SaveCode {
-		index = strings.Replace(index, `var roomCode = "";`, `var roomCode = "`+config.RoomCode+`";`, 1)
+	if savedConfig.SaveCode {
 		index = strings.Replace(index, `var saveCode = false;`, `var saveCode = true;`, 1)
+		index = strings.Replace(index, `var roomCode = "";`, `var roomCode = "`+savedConfig.RoomCode+`";`, 1)
+		index = strings.Replace(index, `var access_key_id = "";`, `var access_key_id = "`+savedConfig.AccessKey+`";`, 1)
+		index = strings.Replace(index, `var access_key_secret = "";`, `var access_key_secret = "`+savedConfig.AccessToken+`";`, 1)
+		index = strings.Replace(index, `var app_id = "";`, `var app_id = "`+savedConfig.AppIdStr+`";`, 1)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -68,13 +61,24 @@ func main() {
 	w := webview.New(false)
 	defer w.Destroy()
 	w.SetTitle("饥荒弹幕机")
-	w.SetSize(420, 300, webview.HintFixed)
+	w.SetSize(420, 380, webview.HintFixed)
 
-	err = w.Bind("callback", func(roomCode string, save bool) error {
+	err = w.Bind("callback", func(object map[string]any) error {
+		roomCode := object["room_code"].(string)
+		accessKey := object["access_key_id"].(string)
+		accessToken := object["access_key_secret"].(string)
+		appId := object["app_id"].(string)
+
+		savedConfig.AccessKey = accessKey
+		savedConfig.AccessToken = accessToken
+		savedConfig.AppIdStr = appId
+		savedConfig.RoomCode = roomCode
+
+		save := object["save_code"].(bool)
+
 		if save {
-			config.RoomCode = roomCode
-			config.SaveCode = true
-			d, err := json.Marshal(config)
+			savedConfig.SaveCode = true
+			d, err := json.Marshal(savedConfig)
 			if err != nil {
 				return err
 			}
@@ -82,20 +86,24 @@ func main() {
 			if err != nil {
 				return err
 			}
-		} else {
-			config.RoomCode = roomCode
 		}
-		fmt.Println(config.RoomCode)
+		fmt.Println(savedConfig.RoomCode)
 		w.Eval(`setState("processing")`)
 		go func() {
-			err := startServer(ctx, config.RoomCode, func() {
-				w.Eval(`setState("error", "转发已终止")`)
+			err := startServer(ctx, savedConfig, func() {
+				w.Dispatch(func() {
+					w.Eval(`setState("error", "转发已终止")`)
+				})
 			})
 			if err != nil {
-				w.Eval(`setState("error", "转发已终止")`)
+				w.Dispatch(func() {
+					w.Eval(`setState("error", "无法启动服务器")`)
+				})
 				return
 			}
-			w.Eval(`setState("running")`)
+			w.Dispatch(func() {
+				w.Eval(`setState("running")`)
+			})
 		}()
 		return nil
 	})
@@ -108,6 +116,9 @@ func main() {
 	})
 	w.Bind("openRoom", func(req ...any) error {
 		return browser.OpenURL("https://link.bilibili.com/p/center/index#/my-room/start-live")
+	})
+	w.Bind("openBilibili", func(req ...any) error {
+		return browser.OpenURL("https://open-live.bilibili.com/open-manage")
 	})
 	w.SetHtml(index)
 	w.Run()
