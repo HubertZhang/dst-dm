@@ -2,10 +2,7 @@
 
 ## 使用方式
 
-解压后通过命令行参数传入 直播开放平台的 accessToken 及 secret 及 appid 及身份码
-
-start -key=xxx -secret=xxx -app-id=xxx -port=9876 -room-code=xxx
-
-在饥荒需要中安装模组后即可将弹幕以对话形式显示在本地啦
+由于目前插件未过审，且过审后暂无合适的部署方式，目前需要使用者自己申请成为 B站开放平台 开发者，在本机使用自己的开发者信息将自己直播间的弹幕转发到游戏中。详情见 [doc/main.md](doc/main.md)
 
 饥荒联机版插件地址 https://steamcommunity.com/sharedfiles/filedetails/?id=3216736582
+
