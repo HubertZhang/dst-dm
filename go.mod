@@ -1,12 +1,12 @@
 module hubertzhang.com/dst-dm
 
-go 1.19
+go 1.22
 
 require (
 	github.com/gorilla/mux v1.8.1
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/vtb-link/bianka v0.2.2
-	github.com/webview/webview_go v0.0.0-20240220051247-56f456ca3a43
+	github.com/webview/webview_go v0.0.0-20240831120633-6173450d4dd6
 	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
