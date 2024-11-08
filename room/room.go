@@ -59,19 +59,9 @@ func (r *Room) Handle(wsClient *basic.WsClient, msg *proto.Message) error {
 	if err != nil {
 		return err
 	}
-
-	// 你可以使用cmd进行switch
-	switch cmd {
-	case proto.CmdLiveOpenPlatformDanmu:
-		if len(r.Messages) > 90 {
-			for i := 0; i < 10; i++ {
-				<-r.Messages
-			}
-		}
-		r.Messages <- &proto.Cmd{
-			Cmd:  cmd,
-			Data: data.(*proto.CmdDanmuData),
-		}
+	r.Messages <- &proto.Cmd{
+		Cmd:  cmd,
+		Data: data,
 	}
 	return nil
 }
