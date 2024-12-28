@@ -37,9 +37,30 @@ jobs:
         run: go build -v ./...
       - name: Build Release Binary
         run: go build --ldflags "-s -w ${{ matrix.extra_ldflags }}" -o "${{ matrix.asset_name }}" ./cmd/ui
-      - name: 'Upload Artifact'
+      - name: "Upload Artifact"
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
           path: ${{ matrix.asset_name }}
+          retention-days: 5
+
+  build-plugin:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore Packages
+        run: nuget restore http_plugin/blive-dm-http.sln
+
+      - name: Build plugin for Danmuji
+        run: msbuild http_plugin/blive-dm-http.csproj -t:rebuild -property:Configuration=Release
+
+      - name: "Upload Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: Danmuji Plugin
+          path: http_plugin\bin\Release\net462\blive-dm-http.dll
           retention-days: 5
