@@ -139,6 +139,9 @@ local function expireSeenUsers(t)
 end
 
 local function handleEnter(data)
+    if DMJ.Configurations["show_enter"] ~= "true" then
+        return
+    end
     if not data then
         return
     end
