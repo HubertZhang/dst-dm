@@ -45,8 +45,9 @@ func startServer(ctx context.Context, c Config, callback func()) error {
 			err := wcs.Reconnection(resp)
 			if err != nil {
 				logger.Warn("直播间连接终止，重联失败，退出中。。", slog.Any("err", err))
+			} else {
+				canContinue = true
 			}
-			canContinue = true
 		case basic.CloseAuthFailed:
 			logger.Warn("鉴权失败！")
 		case basic.CloseActively:
@@ -57,6 +58,7 @@ func startServer(ctx context.Context, c Config, callback func()) error {
 			logger.Warn("直播间连接因未知原因关闭！")
 		}
 		if !canContinue {
+			logger.Info("停止中。。。", slog.Int("closeType", closeType))
 			cancel()
 		}
 	})
@@ -68,12 +70,12 @@ func startServer(ctx context.Context, c Config, callback func()) error {
 	go func() {
 		tk := time.NewTicker(10 * time.Second)
 		defer tk.Stop()
-		defer cancel()
 		for {
 			select {
 			case <-tk.C:
 				err := sdk.AppHeartbeat(resp.GameInfo.GameID)
 				if err != nil {
+					logger.Error("直播间心跳失败", slog.Any("err", err))
 					cancel()
 					return
 				}
