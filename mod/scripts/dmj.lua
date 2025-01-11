@@ -171,6 +171,10 @@ function DMJ_Fetch()
                 State = "Running"
                 local status, data = pcall(function() return json.decode(result) end)
                 if not status or not data then
+                    State = "Error"
+                    local error_msg = "【错误】请求解析失败："
+                    error_msg = error_msg .. result
+                    ChatHistory:AddToHistory(ChatTypes.SystemMessage, nil, nil, "弹幕机", error_msg, UICOLOURS.RED)
                     return
                 end
                 for k, c in ipairs(data) do
