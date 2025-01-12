@@ -95,35 +95,39 @@ function DMJ_Start()
     coroutine.resume(coroutine.create(DMJ_Fetch))
 end
 
-local nameColour = {}
-nameColour[0] = UICOLOURS.WHITE
-nameColour[1] = UICOLOURS.BLUE
-nameColour[2] = UICOLOURS.GOLD
-nameColour[3] = UICOLOURS.RED
+-- 对应房间大航海 1总督 2提督 3舰长
+-- TODO: 增加mod选项，供选择等级颜色
+local guardLevelToColour = {
+    [0] = UICOLOURS.WHITE,
+    [1] = UICOLOURS.RED,
+    [2] = UICOLOURS.GOLD,
+    [3] = UICOLOURS.BLUE,
+}
+
+local function levelToIcon(level)
+    -- TODO: 增加几个mod选项，供选择等级头像
+    if level == 0 then
+        return "profileflair_skincollector" -- 皮肤收集者
+    elseif level < 10 then
+        return "profileflair_egg"           -- 鸟蛋
+    elseif level < 20 then
+        return "profileflair_crowkid"       -- 小乌鸦
+    else
+        return "profileflair_corvus"        -- 良羽鸦
+    end
+end
 
 local function handleDM(data)
     if data.uname and data.msg then
         data.msg = replaceEmoji(data.msg)
-        -- 是否增加几个mod选项，供选择头像等级组合？
+        local level = 0
         if data.fans_medal_level and data.fans_medal_level ~= 0 and data.fans_medal_wearing_status then
-            if data.fans_medal_level < 10 then
-                ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, data.uname, data.msg,
-                    nameColour[data.guard_level or 0],
-                    "profileflair_egg", nil, true) -- 鸟蛋
-            elseif data.fans_medal_level < 20 then
-                ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, data.uname, data.msg,
-                    nameColour[data.guard_level or 0],
-                    "profileflair_crowkid", nil, true) -- 鸦年华小乌鸦
-            else
-                ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, data.uname, data.msg,
-                    nameColour[data.guard_level or 0],
-                    "profileflair_corvus", nil, true) -- 鸦年华良羽鸦
-            end
-        else
-            ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, data.uname, data.msg,
-                nameColour[data.guard_level or 0],
-                "profileflair_skincollector", nil, true)
+            level = data.fans_medal_level
         end
+        local icon = levelToIcon(level)
+        ChatHistory:AddToHistory(ChatTypes.Message, nil, nil, data.uname, data.msg,
+            guardLevelToColour[data.guard_level or 0],
+            icon, nil, true)
     end
 end
 
