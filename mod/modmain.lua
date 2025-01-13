@@ -16,6 +16,9 @@ end
 
 require("dmj")
 
+-- To use AddClassPostConstruct, you need to modimport it
+modimport("scripts/gift_chatline.lua")
+
 AddSimPostInit(function()
     DMJ_Start()
 end)
