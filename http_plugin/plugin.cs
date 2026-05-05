@@ -59,7 +59,7 @@ namespace blive_dm_http
             this.PluginAuth = "Hubert Zhang";
             this.PluginName = "弹幕转 HTTP 服务器";
             this.PluginCont = "hubert_zhang@icloud.com";
-            this.PluginVer = "v0.0.1";
+            this.PluginVer = "v0.0.2";
             this.PluginDesc = "提供 HTTP 接口，访问 127.0.0.1:9876/room/-/msgs 可持续获取弹幕原始数据";
 
             Start();
